@@ -1,0 +1,4 @@
+-- reverted in migration 0013: courses meet on different dates/days per
+-- class session (already modeled by class_sessions), so a single date on
+-- the course itself doesn't make sense. Kept as a no-op so migration
+-- history/ordering stays intact.
