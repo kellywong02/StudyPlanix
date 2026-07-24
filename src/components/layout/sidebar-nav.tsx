@@ -3,10 +3,8 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Sparkles } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 
 import { NAV_ITEMS } from "./nav-config"
 
@@ -51,17 +49,6 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           )
         })}
       </nav>
-
-      <div className="m-3 rounded-xl bg-sidebar-accent p-4 text-center">
-        <span className="mx-auto mb-2 flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Sparkles className="size-5" />
-        </span>
-        <p className="text-sm font-medium">Need help?</p>
-        <p className="mb-3 text-xs text-muted-foreground">Ask StudyPlanix AI</p>
-        <Button asChild size="sm" className="w-full" onClick={onNavigate}>
-          <Link href="/ai-assistant">Chat Now</Link>
-        </Button>
-      </div>
     </div>
   )
 }

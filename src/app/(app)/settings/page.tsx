@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
+import type { GradePoint } from "@/lib/grading-scales"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 import { ChangePasswordForm } from "./change-password-form"
+import { GradingScaleForm } from "./grading-scale-form"
 import { SchoolInfoForm } from "./school-info-form"
 import { StudyPreferencesForm } from "./study-preferences-form"
 
@@ -12,7 +14,7 @@ export default async function SettingsPage() {
   } = await supabase.auth.getUser()
   const { data: profile } = await supabase
     .from("profiles")
-    .select("study_type, study_availability, university")
+    .select("study_type, study_availability, university, grading_scale_id, custom_grade_scale")
     .eq("id", user!.id)
     .single()
 
@@ -26,6 +28,18 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <SchoolInfoForm university={profile?.university ?? null} />
+        </CardContent>
+      </Card>
+
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle>Grading scale</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <GradingScaleForm
+            gradingScaleId={profile?.grading_scale_id ?? "us-standard"}
+            customGradeScale={(profile?.custom_grade_scale as GradePoint[] | null) ?? null}
+          />
         </CardContent>
       </Card>
 

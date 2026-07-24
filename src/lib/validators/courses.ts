@@ -16,6 +16,8 @@ export const courseSchema = z.object({
   color: z.string().optional(),
   location: z.string().optional(),
   term: z.string().optional(),
+  credits: z.coerce.number().positive().optional(),
+  grade: z.string().optional(),
   groups: z.array(courseGroupSchema).optional(),
 })
 

@@ -20,6 +20,12 @@ async function requireUserId() {
   return { supabase, userId: user.id }
 }
 
+function gradeFromFormData(formData: FormData): string | undefined {
+  const grade = formData.get("grade")
+  if (!grade || grade === "none") return undefined
+  return String(grade)
+}
+
 function parseGroupsJson(formData: FormData): CourseGroupInput[] {
   const raw = formData.get("groupsJson")
   if (!raw) return []
@@ -48,6 +54,8 @@ export async function createCourse(
     color: formData.get("color") || undefined,
     location: formData.get("location") || undefined,
     term: formData.get("term") || undefined,
+    credits: formData.get("credits") || undefined,
+    grade: gradeFromFormData(formData),
     groups: parseGroupsJson(formData),
   })
 
@@ -85,6 +93,7 @@ export async function createCourse(
 
   revalidatePath("/courses")
   revalidatePath("/timetable")
+  revalidatePath("/gpa-tracker")
   return null
 }
 
@@ -99,6 +108,8 @@ export async function updateCourse(
     color: formData.get("color") || undefined,
     location: formData.get("location") || undefined,
     term: formData.get("term") || undefined,
+    credits: formData.get("credits") || undefined,
+    grade: gradeFromFormData(formData),
     groups: parseGroupsJson(formData),
   })
 
@@ -111,7 +122,7 @@ export async function updateCourse(
 
   const { error } = await supabase
     .from("courses")
-    .update(rest)
+    .update({ ...rest, credits: rest.credits ?? null, grade: rest.grade ?? null })
     .eq("id", courseId)
     .eq("user_id", userId)
 
@@ -143,6 +154,7 @@ export async function updateCourse(
 
   revalidatePath("/courses")
   revalidatePath("/timetable")
+  revalidatePath("/gpa-tracker")
   return null
 }
 
@@ -156,6 +168,7 @@ export async function archiveCourse(courseId: string) {
 
   revalidatePath("/courses")
   revalidatePath("/timetable")
+  revalidatePath("/gpa-tracker")
 }
 
 export async function deleteCourse(courseId: string) {
@@ -164,4 +177,5 @@ export async function deleteCourse(courseId: string) {
 
   revalidatePath("/courses")
   revalidatePath("/timetable")
+  revalidatePath("/gpa-tracker")
 }

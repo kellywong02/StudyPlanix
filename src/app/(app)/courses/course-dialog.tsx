@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import type { Database } from "@/types/database.types"
 
 type Course = Database["public"]["Tables"]["courses"]["Row"]
@@ -20,9 +27,11 @@ export type CourseWithGroups = Course & { course_groups: CourseGroupRow[] }
 export function CourseDialog({
   course,
   trigger,
+  gradeOptions,
 }: {
   course?: CourseWithGroups
   trigger: React.ReactNode
+  gradeOptions: string[]
 }) {
   const [open, setOpen] = useState(false)
   const action = course ? updateCourse.bind(null, course.id) : createCourse
@@ -117,6 +126,36 @@ export function CourseDialog({
           <div className="grid gap-2">
             <Label htmlFor="location">Default location</Label>
             <Input id="location" name="location" defaultValue={course?.location ?? ""} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="credits">Credits</Label>
+              <Input
+                id="credits"
+                name="credits"
+                type="number"
+                step="0.5"
+                min="0"
+                defaultValue={course?.credits ?? ""}
+                placeholder="e.g. 4"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="grade">Final grade</Label>
+              <Select name="grade" defaultValue={course?.grade ?? "none"}>
+                <SelectTrigger id="grade" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Not graded yet</SelectItem>
+                  {gradeOptions.map((g) => (
+                    <SelectItem key={g} value={g}>
+                      {g}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="groupNameInput">Groups</Label>

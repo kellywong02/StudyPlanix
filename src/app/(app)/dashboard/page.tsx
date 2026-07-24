@@ -11,6 +11,7 @@ import {
 
 import { createClient } from "@/lib/supabase/server"
 import { isOverdue } from "@/lib/assignment-status"
+import { computeStudyStreak, type FocusSession } from "@/lib/study-analytics"
 import { ComingSoonCard } from "@/components/coming-soon"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -86,7 +87,10 @@ export default async function DashboardPage() {
     .slice(0, 10)
   const weekAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [{ data: allSessions }, { data: dueThisWeek }, { data: examSessions }] =
+  const streakHistoryStart = new Date(now)
+  streakHistoryStart.setDate(streakHistoryStart.getDate() - 90)
+
+  const [{ data: allSessions }, { data: dueThisWeek }, { data: examSessions }, { data: focusLog }] =
     await Promise.all([
       supabase
         .from("class_sessions")
@@ -103,7 +107,21 @@ export default async function DashboardPage() {
         .select("*, courses(name, color), course_groups(name)")
         .eq("session_type", "exam")
         .eq("is_recurring", false),
+      supabase
+        .from("pomodoro_sessions")
+        .select("completed_at, duration_minutes")
+        .eq("session_type", "focus")
+        .gte("completed_at", streakHistoryStart.toISOString()),
     ])
+
+  const focusSessions: FocusSession[] = (focusLog ?? []).map((s) => ({
+    completedAt: s.completed_at,
+    durationMinutes: s.duration_minutes,
+    courseId: null,
+    courseName: null,
+    color: null,
+  }))
+  const studyStreak = computeStudyStreak(focusSessions, now)
 
   const todaysClasses = (allSessions ?? []).filter(
     (s) =>
@@ -236,7 +254,7 @@ export default async function DashboardPage() {
         <StatCard
           icon={Flame}
           label="Study Streak"
-          value={<span className="text-base font-medium text-muted-foreground">Coming soon</span>}
+          value={`${studyStreak.current}d`}
           colorClasses="bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
         />
       </div>

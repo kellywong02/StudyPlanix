@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useTransition } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-react"
 import { toast } from "sonner"
 
@@ -73,11 +73,13 @@ export function PomodoroTimer({ courses }: { courses: Course[] }) {
   const [isRunning, setIsRunning] = useState(false)
   const [cyclesCompleted, setCyclesCompleted] = useState(0)
   const [courseId, setCourseId] = useState("none")
-  const [, startTransition] = useTransition()
 
   const endAtRef = useRef<number | null>(null)
 
-  function handleComplete() {
+  // awaits the save before switching modes/notifying, so that by the time the
+  // UI shows "complete" the session is guaranteed committed — otherwise a
+  // reader who immediately jumps to Analytics can catch the write in flight
+  async function handleComplete() {
     setIsRunning(false)
     playBeep()
 
@@ -85,13 +87,14 @@ export function PomodoroTimer({ courses }: { courses: Course[] }) {
     const minutes = durationFor(completedMode)
 
     if (completedMode === "focus") {
-      startTransition(async () => {
-        await logPomodoroSession({
-          courseId: courseId === "none" ? null : courseId,
-          sessionType: "focus",
-          durationMinutes: minutes,
-        })
+      const result = await logPomodoroSession({
+        courseId: courseId === "none" ? null : courseId,
+        sessionType: "focus",
+        durationMinutes: minutes,
       })
+      if (result.error) {
+        toast.error("Couldn't save this study session", { description: result.error })
+      }
     }
 
     const newCycles = completedMode === "focus" ? cyclesCompleted + 1 : cyclesCompleted
