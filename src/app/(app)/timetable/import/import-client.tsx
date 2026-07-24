@@ -56,8 +56,12 @@ export function ImportClient({ courses }: { courses: Course[] }) {
     setRows([])
     setParseErrors([])
 
-    const isIcs = file.name.toLowerCase().endsWith(".ics")
-    const endpoint = isIcs ? "/api/import/ics" : "/api/import/xlsx"
+    const lowerName = file.name.toLowerCase()
+    const endpoint = lowerName.endsWith(".ics")
+      ? "/api/import/ics"
+      : lowerName.endsWith(".pdf")
+        ? "/api/import/pdf"
+        : "/api/import/xlsx"
 
     const formData = new FormData()
     formData.append("file", file)
@@ -113,12 +117,13 @@ export function ImportClient({ courses }: { courses: Course[] }) {
       <Card>
         <CardContent className="grid gap-3 py-6">
           <p className="text-sm text-muted-foreground">
-            Upload an .ics calendar export, or an .xlsx/.csv file using the columns: Course
+            Upload an .ics calendar export, an .xlsx/.csv file using the columns: Course
             Code, Course Name, Start Time, End Time, Location, Session Type, Date, Group,
-            Remarks. Every row needs a Date — if a class meets weekly but the day or time
-            shifts around, just add one row per occurrence with its own Date. Group is
-            optional — fill it in if you're enrolled in a specific group/section for that
-            class (e.g. &quot;Tutorial Group 3&quot;).
+            Remarks, or a .pdf timetable/syllabus (AI-parsed — works best on text-based PDFs,
+            not scanned images). Every .xlsx/.csv row needs a Date — if a class meets weekly
+            but the day or time shifts around, just add one row per occurrence with its own
+            Date. Group is optional — fill it in if you&apos;re enrolled in a specific
+            group/section for that class (e.g. &quot;Tutorial Group 3&quot;).
           </p>
           <a
             href="/timetable-template.xlsx"
@@ -130,7 +135,7 @@ export function ImportClient({ courses }: { courses: Course[] }) {
           <Input
             ref={fileInputRef}
             type="file"
-            accept=".ics,.xlsx,.csv"
+            accept=".ics,.xlsx,.csv,.pdf"
             onChange={handleFileChange}
             disabled={isParsing}
             className="h-auto cursor-pointer py-1.5 file:mr-3 file:cursor-pointer file:rounded-md file:bg-secondary file:px-3 file:py-1.5 file:text-secondary-foreground"

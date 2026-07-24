@@ -160,8 +160,10 @@ export async function commitImportRows(rows: CommitRow[]): Promise<CommitResult>
     return groupKeyToId.get(key) ?? null
   }
 
-  const icsRows = validRows.filter((r) => r.externalUid)
-  const xlsxRows = validRows.filter((r) => !r.externalUid)
+  const icsRows = validRows.filter((r) => r.source === "ics")
+  // xlsx and pdf rows have no stable external id, so both are deduped
+  // against existing sessions by composite key rather than upserted
+  const rowsWithoutUid = validRows.filter((r) => r.source !== "ics")
 
   let created = 0
   let updated = 0
@@ -218,12 +220,12 @@ export async function commitImportRows(rows: CommitRow[]): Promise<CommitResult>
     }
   }
 
-  // 3. xlsx rows: no stable UID, so dedupe against what's already in the DB —
-  // recurring rows key on (course_id, day_of_week, start_time, end_time,
-  // recurrence_start_date); one-off rows key on (course_id, specific_date,
-  // start_time, end_time)
-  if (xlsxRows.length > 0) {
-    const courseIds = [...new Set(xlsxRows.map((r) => resolveCourseId(r)).filter(Boolean))]
+  // 3. xlsx/pdf rows: no stable UID, so dedupe against what's already in the
+  // DB — recurring rows key on (course_id, day_of_week, start_time,
+  // end_time, recurrence_start_date); one-off rows key on (course_id,
+  // specific_date, start_time, end_time)
+  if (rowsWithoutUid.length > 0) {
+    const courseIds = [...new Set(rowsWithoutUid.map((r) => resolveCourseId(r)).filter(Boolean))]
     const { data: existingSessions } = await supabase
       .from("class_sessions")
       .select("course_id, day_of_week, start_time, end_time, recurrence_start_date, specific_dates")
@@ -243,7 +245,7 @@ export async function commitImportRows(rows: CommitRow[]): Promise<CommitResult>
     }
 
     const toInsert: Database["public"]["Tables"]["class_sessions"]["Insert"][] = []
-    for (const row of xlsxRows) {
+    for (const row of rowsWithoutUid) {
       const courseId = resolveCourseId(row)
       if (!courseId) continue
       const key = row.isRecurring
@@ -267,7 +269,7 @@ export async function commitImportRows(rows: CommitRow[]): Promise<CommitResult>
         specific_dates: row.isRecurring ? null : row.specificDate ? [row.specificDate] : null,
         recurrence_start_date: row.isRecurring ? row.recurrenceStartDate : null,
         recurrence_end_date: row.isRecurring ? row.recurrenceEndDate : null,
-        source: "xlsx_import",
+        source: row.source === "pdf" ? "pdf_import" : "xlsx_import",
         external_uid: null,
         remarks: row.remarks,
       })

@@ -160,6 +160,7 @@ export function parseXlsx(buffer: ArrayBuffer): ParseResult {
 
     rows.push({
       rowId: `xlsx-${index}`,
+      source: "xlsx",
       courseCode,
       courseName: courseName || courseCode,
       sessionType,

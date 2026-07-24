@@ -78,6 +78,7 @@ export function parseIcs(icsText: string): ParseResult {
 
           rows.push({
             rowId: `ics-${index}-${day}`,
+            source: "ics",
             courseCode: "",
             courseName: title || "Imported class",
             sessionType: "lecture",
@@ -98,6 +99,7 @@ export function parseIcs(icsText: string): ParseResult {
       } else {
         rows.push({
           rowId: `ics-${index}`,
+          source: "ics",
           courseCode: "",
           courseName: title || "Imported event",
           sessionType: /exam/i.test(title ?? "") ? "exam" : "other",

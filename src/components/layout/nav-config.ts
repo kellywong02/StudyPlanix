@@ -1,4 +1,5 @@
 import {
+  Activity,
   BarChart3,
   BookOpen,
   CalendarDays,
@@ -7,8 +8,9 @@ import {
   GraduationCap,
   Clock,
   LayoutDashboard,
+  Layers,
+  ListChecks,
   NotebookText,
-  Sparkles,
   Timer,
 } from "lucide-react"
 
@@ -20,8 +22,10 @@ export const NAV_ITEMS = [
   { href: "/exams", label: "Exams", icon: GraduationCap },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/notes", label: "Notes", icon: NotebookText },
+  { href: "/quizzes", label: "Quizzes", icon: ListChecks },
+  { href: "/flashcards", label: "Flashcards", icon: Layers },
   { href: "/pomodoro", label: "Pomodoro", icon: Timer },
   { href: "/study-plan", label: "Study Plan", icon: Clock },
+  { href: "/study-analytics", label: "Study Analytics", icon: Activity },
   { href: "/gpa-tracker", label: "GPA Tracker", icon: BarChart3 },
-  { href: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
 ] as const

@@ -104,4 +104,134 @@ test.describe("StudyPlanix golden path", () => {
     await page.click('button[type="submit"]')
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 })
   })
+
+  test("PDF timetable import: upload, AI-parsed preview, and commit", async ({ page }) => {
+    const email = uniqueEmail("pdfimport")
+
+    await page.goto("/signup")
+    await page.fill("#fullName", "PDF Import Test")
+    await page.fill("#email", email)
+    await page.fill("#password", PASSWORD)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+
+    await page.goto("/timetable/import")
+    const fileInput = page.locator('input[type="file"]')
+    await fileInput.setInputFiles(
+      "C:\\Users\\kelly\\AppData\\Local\\Temp\\claude\\d--Programming-Projects-StudyPlanix\\21048117-8810-4e36-be03-bd25e2c22981\\scratchpad\\test-timetable.pdf"
+    )
+
+    // AI parsing call — allow generous time
+    await expect(page.locator("table")).toBeVisible({ timeout: 30_000 })
+    await expect(page.locator("text=CS101").first()).toBeVisible()
+    await expect(page.locator("text=Linear Algebra").first()).toBeVisible()
+
+    await page.click('button:has-text("Confirm import")')
+    await expect(page).toHaveURL(/\/timetable$/, { timeout: 15_000 })
+
+    await expect(page.locator("text=Introduction to Computer Science").first()).toBeVisible({
+      timeout: 10_000,
+    })
+    await expect(page.locator("text=Linear Algebra").first()).toBeVisible()
+  })
+
+  test("Quiz generator: upload PDF, generate quiz, answer, and submit", async ({ page }) => {
+    const email = uniqueEmail("quizgen")
+
+    await page.goto("/signup")
+    await page.fill("#fullName", "Quiz Gen Test")
+    await page.fill("#email", email)
+    await page.fill("#password", PASSWORD)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+
+    await page.goto("/quizzes")
+    const fileInput = page.locator('input[type="file"]')
+    await fileInput.setInputFiles(
+      "C:\\Users\\kelly\\AppData\\Local\\Temp\\claude\\d--Programming-Projects-StudyPlanix\\21048117-8810-4e36-be03-bd25e2c22981\\scratchpad\\test-quiz-source.pdf"
+    )
+
+    // Quiz generation calls OpenAI — allow generous time, then redirect to /quizzes/[id]
+    await expect(page).toHaveURL(/\/quizzes\/[0-9a-f-]+$/, { timeout: 30_000 })
+
+    const questionCards = page.locator('[data-testid="quiz-question"]')
+    const questionCount = await questionCards.count()
+    expect(questionCount).toBeGreaterThan(0)
+
+    // Answer every question: click first option button if present, else fill the textarea
+    for (let i = 0; i < questionCount; i++) {
+      const card = questionCards.nth(i)
+      const optionButtons = card.locator("button")
+      const optionCount = await optionButtons.count()
+      if (optionCount > 0) {
+        await optionButtons.first().click()
+      } else {
+        await card.locator("textarea").fill("A general answer for testing.")
+      }
+    }
+
+    await page.click('button:has-text("Submit quiz")')
+    await expect(page.locator("text=Quiz complete")).toBeVisible({ timeout: 30_000 })
+    await expect(page.locator('button:has-text("Retake quiz")')).toBeVisible()
+
+    // Back on the list, the quiz should now show a best-score badge
+    await page.goto("/quizzes")
+    await expect(page.locator("text=Best:").first()).toBeVisible({ timeout: 10_000 })
+  })
+
+  test("Flashcard generator: upload PDF, generate deck, and review cards", async ({ page }) => {
+    test.setTimeout(90_000)
+    const email = uniqueEmail("flashcardgen")
+
+    await page.goto("/signup")
+    await page.fill("#fullName", "Flashcard Gen Test")
+    await page.fill("#email", email)
+    await page.fill("#password", PASSWORD)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+
+    await page.goto("/flashcards")
+    const fileInput = page.locator('input[type="file"]')
+    await fileInput.setInputFiles(
+      "C:\\Users\\kelly\\AppData\\Local\\Temp\\claude\\d--Programming-Projects-StudyPlanix\\21048117-8810-4e36-be03-bd25e2c22981\\scratchpad\\test-quiz-source.pdf"
+    )
+
+    // Flashcard generation calls OpenAI — allow generous time, then redirect to /flashcards/[id]
+    await expect(page).toHaveURL(/\/flashcards\/[0-9a-f-]+$/, { timeout: 30_000 })
+
+    const flashcard = page.locator('[data-testid="flashcard"]')
+    await expect(flashcard).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator("text=Card 1 of")).toBeVisible()
+    await expect(page.locator("text=Front")).toBeVisible()
+
+    // Step through every card, clicking "Got it" each time, and record the
+    // front text shown at each step — verifies no card is skipped or
+    // repeated when the reviewed card's schedule updates mid-session
+    // (regression check for the reorder-under-a-live-index bug).
+    const progressText = await page.locator("text=/Card \\d+ of \\d+/").textContent()
+    const totalCards = Number(progressText?.match(/of (\d+)/)?.[1])
+    expect(totalCards).toBeGreaterThan(0)
+
+    const seenFronts = new Set<string>()
+    for (let i = 0; i < totalCards; i++) {
+      await expect(page.locator(`text=Card ${i + 1} of ${totalCards}`)).toBeVisible({
+        timeout: 10_000,
+      })
+      await expect(page.locator("text=Front")).toBeVisible()
+      const front = await flashcard.locator("p.text-lg").textContent()
+      expect(front).toBeTruthy()
+      seenFronts.add(front!)
+
+      await flashcard.click()
+      await expect(page.locator("text=Back")).toBeVisible()
+      await page.click('button:has-text("Got it")')
+    }
+
+    expect(seenFronts.size).toBe(totalCards)
+    await expect(page.locator("text=Session complete")).toBeVisible({ timeout: 10_000 })
+
+    // Back on the list, the deck should show a card count
+    await page.goto("/flashcards")
+    await expect(page.locator("text=/\\d+ cards?/").first()).toBeVisible({ timeout: 10_000 })
+  })
 })
