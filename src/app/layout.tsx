@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -16,6 +16,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "StudyPlanix",
   description: "Your AI-powered university companion.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "StudyPlanix",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#6d28d9",
 };
 
 export default function RootLayout({
