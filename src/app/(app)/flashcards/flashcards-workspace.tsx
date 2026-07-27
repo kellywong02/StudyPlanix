@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { deleteFlashcardDeck } from "@/lib/actions/flashcards"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,7 +22,7 @@ type Course = Pick<Database["public"]["Tables"]["courses"]["Row"], "id" | "name"
 
 type DeckRow = Database["public"]["Tables"]["flashcard_decks"]["Row"] & {
   courses: Pick<Course, "name" | "color"> | null
-  flashcards: { id: string; next_review_at: string }[]
+  flashcards: { count: number }[]
 }
 
 const CARD_COUNT_OPTIONS = [10, 20, 30, 40]
@@ -31,11 +30,9 @@ const CARD_COUNT_OPTIONS = [10, 20, 30, 40]
 export function FlashcardsWorkspace({
   decks,
   courses,
-  nowIso,
 }: {
   decks: DeckRow[]
   courses: Course[]
-  nowIso: string
 }) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -81,7 +78,7 @@ export function FlashcardsWorkspace({
         <CardContent className="grid gap-3 py-6">
           <p className="text-sm text-muted-foreground">
             Upload a PDF of your course material — lecture notes, slides, or a syllabus — and the
-            AI will generate a deck of flashcards for spaced review.
+            AI will generate a deck of flashcards you can flip through to review.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={courseId} onValueChange={setCourseId}>
@@ -135,7 +132,7 @@ export function FlashcardsWorkspace({
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((d) => {
-            const dueCount = d.flashcards.filter((c) => c.next_review_at <= nowIso).length
+            const cardCount = d.flashcards[0]?.count ?? 0
 
             return (
               <Card key={d.id}>
@@ -163,12 +160,9 @@ export function FlashcardsWorkspace({
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    {d.flashcards.length} card{d.flashcards.length === 1 ? "" : "s"}
+                    {cardCount} card{cardCount === 1 ? "" : "s"}
                     {d.source_filename ? ` · ${d.source_filename}` : ""}
                   </p>
-                  <Badge variant={dueCount > 0 ? "default" : "outline"} className="w-fit">
-                    {dueCount > 0 ? `${dueCount} due for review` : "All caught up"}
-                  </Badge>
                 </CardContent>
               </Card>
             )

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import type { GradePoint } from "@/lib/grading-scales"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+import { AppearanceForm } from "./appearance-form"
 import { ChangePasswordForm } from "./change-password-form"
 import { GradingScaleForm } from "./grading-scale-form"
 import { SchoolInfoForm } from "./school-info-form"
@@ -21,6 +22,15 @@ export default async function SettingsPage() {
   return (
     <div className="grid gap-6">
       <h1 className="text-2xl font-semibold">Settings</h1>
+
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AppearanceForm />
+        </CardContent>
+      </Card>
 
       <Card className="max-w-md">
         <CardHeader>

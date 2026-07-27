@@ -20,8 +20,8 @@ before it touches the database:
 - **AI Quiz Generator** — turns a PDF of course material into a mixed quiz (multiple choice,
   true/false, short answer). Short-answer responses are graded by a second AI call that accepts
   paraphrasing rather than requiring an exact match.
-- **AI Flashcard Generator** — turns a PDF into a flashcard deck, reviewed with a simple 3-box
-  Leitner spaced-repetition schedule.
+- **AI Flashcard Generator** — turns a PDF into a flashcard deck, shown as a grid you can flip
+  through in any order.
 
 PDF text extraction itself (via [`unpdf`](https://github.com/unjs/unpdf)) is not AI — only the
 structuring/generation step is.
@@ -66,8 +66,8 @@ past scores are tracked per quiz.
 
 ### AI Flashcard Generator
 
-Same upload flow, but produces a flashcard deck. Flip a card, mark "Got it" or "Still learning,"
-and the deck schedules itself for spaced review.
+Same upload flow, but produces a flashcard deck. All cards show at once in a grid — click any
+card to flip it, in any order you like.
 
 ![Flashcard generator](docs/demo/flashcards.gif)
 

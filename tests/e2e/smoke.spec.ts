@@ -199,36 +199,31 @@ test.describe("StudyPlanix golden path", () => {
     // Flashcard generation calls OpenAI — allow generous time, then redirect to /flashcards/[id]
     await expect(page).toHaveURL(/\/flashcards\/[0-9a-f-]+$/, { timeout: 30_000 })
 
-    const flashcard = page.locator('[data-testid="flashcard"]')
-    await expect(flashcard).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator("text=Card 1 of")).toBeVisible()
-    await expect(page.locator("text=Front")).toBeVisible()
+    // All cards render at once in a grid, each starting on its front.
+    const flashcards = page.locator('[data-testid="flashcard"]')
+    const totalCards = await flashcards.count()
+    expect(totalCards).toBeGreaterThan(1)
+    await expect(flashcards.first().locator("text=Front")).toBeVisible()
 
-    // Step through every card, clicking "Got it" each time, and record the
-    // front text shown at each step — verifies no card is skipped or
-    // repeated when the reviewed card's schedule updates mid-session
-    // (regression check for the reorder-under-a-live-index bug).
-    const progressText = await page.locator("text=/Card \\d+ of \\d+/").textContent()
-    const totalCards = Number(progressText?.match(/of (\d+)/)?.[1])
-    expect(totalCards).toBeGreaterThan(0)
+    // Flip the last card first, then the first card — order-independent
+    // flipping is the point of the grid layout, and each card's flip state
+    // must be independent of the others.
+    const lastCard = flashcards.last()
+    const firstCard = flashcards.first()
 
-    const seenFronts = new Set<string>()
-    for (let i = 0; i < totalCards; i++) {
-      await expect(page.locator(`text=Card ${i + 1} of ${totalCards}`)).toBeVisible({
-        timeout: 10_000,
-      })
-      await expect(page.locator("text=Front")).toBeVisible()
-      const front = await flashcard.locator("p.text-lg").textContent()
-      expect(front).toBeTruthy()
-      seenFronts.add(front!)
+    await lastCard.click()
+    await expect(lastCard.locator("text=Back")).toBeVisible()
+    await expect(firstCard.locator("text=Front")).toBeVisible()
 
-      await flashcard.click()
-      await expect(page.locator("text=Back")).toBeVisible()
-      await page.click('button:has-text("Got it")')
-    }
+    await firstCard.click()
+    await expect(firstCard.locator("text=Back")).toBeVisible()
+    await expect(lastCard.locator("text=Back")).toBeVisible()
 
-    expect(seenFronts.size).toBe(totalCards)
-    await expect(page.locator("text=Session complete")).toBeVisible({ timeout: 10_000 })
+    // Flipping the first card again returns it to its front, independent
+    // of the last card staying flipped.
+    await firstCard.click()
+    await expect(firstCard.locator("text=Front")).toBeVisible()
+    await expect(lastCard.locator("text=Back")).toBeVisible()
 
     // Back on the list, the deck should show a card count
     await page.goto("/flashcards")

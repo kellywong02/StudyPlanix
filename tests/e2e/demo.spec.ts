@@ -146,13 +146,12 @@ test("Full feature walkthrough (recording)", async ({ page }) => {
   await page.goto("/flashcards")
   await page.locator('input[type="file"]').setInputFiles(QUIZ_SOURCE_PDF)
   await expect(page).toHaveURL(/\/flashcards\/[0-9a-f-]+$/, { timeout: 30_000 })
-  const flashcard = page.locator('[data-testid="flashcard"]')
-  await expect(flashcard).toBeVisible({ timeout: 10_000 })
-  for (let i = 0; i < 3; i++) {
-    await flashcard.click()
+  const flashcards = page.locator('[data-testid="flashcard"]')
+  await expect(flashcards.first()).toBeVisible({ timeout: 10_000 })
+  const demoCardCount = Math.min(3, await flashcards.count())
+  for (let i = 0; i < demoCardCount; i++) {
+    await flashcards.nth(i).click()
     await page.waitForTimeout(700)
-    await page.click('button:has-text("Got it")')
-    await page.waitForTimeout(500)
   }
   mark("flashcards:end")
 

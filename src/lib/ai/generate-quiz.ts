@@ -50,5 +50,7 @@ export async function generateQuiz(
     throw new Error("The AI could not generate a quiz from this PDF. Try a different file.")
   }
 
-  return parsed
+  // The model doesn't always follow "exactly N" precisely — clamp to the
+  // requested count so the quiz never exceeds what the user selected.
+  return { ...parsed, questions: parsed.questions.slice(0, questionCount) }
 }

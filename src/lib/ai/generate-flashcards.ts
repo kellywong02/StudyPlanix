@@ -45,5 +45,7 @@ export async function generateFlashcards(
     throw new Error("The AI could not generate flashcards from this PDF. Try a different file.")
   }
 
-  return parsed
+  // The model doesn't always follow "exactly N" precisely — clamp to the
+  // requested count so the deck never exceeds what the user selected.
+  return { ...parsed, cards: parsed.cards.slice(0, cardCount) }
 }

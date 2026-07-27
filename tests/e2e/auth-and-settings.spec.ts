@@ -168,4 +168,33 @@ test.describe("Auth & Settings", () => {
       "Evenings and weekends only"
     )
   })
+
+  test("Dark mode toggle switches the theme and persists across reload and navigation", async ({
+    page,
+  }) => {
+    const email = uniqueEmail("themetoggle")
+
+    await page.goto("/signup")
+    await page.fill("#fullName", "Theme Toggle Test")
+    await page.fill("#email", email)
+    await page.fill("#password", PASSWORD)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+
+    await expect(page.locator("html")).not.toHaveClass(/dark/)
+
+    await page.goto("/settings")
+    await page.click('button:has-text("Dark")')
+    await expect(page.locator("html")).toHaveClass(/dark/)
+
+    await page.reload()
+    await expect(page.locator("html")).toHaveClass(/dark/)
+
+    await page.goto("/dashboard")
+    await expect(page.locator("html")).toHaveClass(/dark/)
+
+    await page.goto("/settings")
+    await page.click('button:has-text("Light")')
+    await expect(page.locator("html")).not.toHaveClass(/dark/)
+  })
 })
