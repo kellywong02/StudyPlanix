@@ -1,8 +1,10 @@
 "use server"
 
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { createClient } from "@/lib/supabase/server"
+import { SESSION_MARKER_COOKIE, SESSION_MARKER_COOKIE_OPTIONS } from "@/lib/supabase/session-marker"
 import {
   changePasswordSchema,
   forgotPasswordSchema,
@@ -10,6 +12,11 @@ import {
   resetPasswordSchema,
   signupSchema,
 } from "@/lib/validators/auth"
+
+async function markBrowserSession() {
+  const cookieStore = await cookies()
+  cookieStore.set(SESSION_MARKER_COOKIE, "1", SESSION_MARKER_COOKIE_OPTIONS)
+}
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 
@@ -37,6 +44,7 @@ export async function login(
     return { error: error.message }
   }
 
+  await markBrowserSession()
   redirect("/dashboard")
 }
 
@@ -71,6 +79,7 @@ export async function signup(
   // if email confirmations are disabled, signUp() already returns an active
   // session — go straight to the dashboard instead of telling them to check email
   if (data.session) {
+    await markBrowserSession()
     redirect("/dashboard")
   }
 
@@ -188,11 +197,14 @@ export async function resetPassword(
     return { error: error.message }
   }
 
+  await markBrowserSession()
   return { success: true }
 }
 
 export async function logout() {
   const supabase = await createClient()
   await supabase.auth.signOut()
+  const cookieStore = await cookies()
+  cookieStore.delete(SESSION_MARKER_COOKIE)
   redirect("/login")
 }

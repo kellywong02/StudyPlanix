@@ -197,4 +197,53 @@ test.describe("Auth & Settings", () => {
     await page.click('button:has-text("Light")')
     await expect(page.locator("html")).not.toHaveClass(/dark/)
   })
+
+  test("an already-logged-in user visiting /login or /signup is redirected to /dashboard", async ({
+    page,
+  }) => {
+    const email = uniqueEmail("alreadyauth")
+
+    await page.goto("/signup")
+    await page.fill("#fullName", "Already Auth Test")
+    await page.fill("#email", email)
+    await page.fill("#password", PASSWORD)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+
+    await page.goto("/login")
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 })
+
+    await page.goto("/signup")
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 })
+  })
+
+  test("closing the browser forces logout even though Supabase's own cookie would otherwise persist", async ({
+    page,
+    context,
+  }) => {
+    const email = uniqueEmail("browserrestart")
+
+    await page.goto("/signup")
+    await page.fill("#fullName", "Browser Restart Test")
+    await page.fill("#email", email)
+    await page.fill("#password", PASSWORD)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+
+    const marker = (await context.cookies()).find((c) => c.name === "sp-browser-session")
+    expect(marker).toBeTruthy()
+    expect(marker!.expires).toBe(-1) // -1 = no expiry, i.e. a real browser-session cookie
+
+    // Navigating around within the same browser session must not force logout
+    await page.goto("/courses")
+    await expect(page).toHaveURL(/\/courses/)
+
+    // Simulate closing and reopening the browser: only the session-only
+    // marker cookie is cleared on restart — Supabase's own ~400-day cookie
+    // survives, which is exactly the gap this feature closes.
+    await context.clearCookies({ name: "sp-browser-session" })
+
+    await page.goto("/dashboard")
+    await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
+  })
 })

@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
+import { SESSION_MARKER_COOKIE } from "./session-marker"
+
 const PUBLIC_PATHS = [
   "/login",
   "/signup",
@@ -37,8 +39,20 @@ export async function updateSession(request: NextRequest) {
   // must call getUser() (not getSession()) so the middleware actually
   // revalidates the token with Supabase rather than trusting a stale cookie
   const {
-    data: { user },
+    data: { user: rawUser },
   } = await supabase.auth.getUser()
+
+  // Supabase's auth cookie persists for 400 days regardless of browser
+  // restarts, but our own session-only marker cookie doesn't — its absence
+  // here means the browser was closed and reopened since the last visit.
+  // Treat that the same as an expired session rather than silently trusting
+  // the long-lived Supabase cookie.
+  const hasBrowserSession = request.cookies.has(SESSION_MARKER_COOKIE)
+  let user = rawUser
+  if (user && !hasBrowserSession) {
+    await supabase.auth.signOut()
+    user = null
+  }
 
   const path = request.nextUrl.pathname
   const isPublicPath = PUBLIC_PATHS.some(
