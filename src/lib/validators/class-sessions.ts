@@ -11,6 +11,22 @@ export const SESSION_TYPES = [
   "other",
 ] as const
 
+// Used for the "· Lecture 1", "· Lab 2" etc. numbering shown on timetable,
+// dashboard, and calendar session cards — "other" falls back to the
+// generic "Lesson" since it has no more specific name.
+export const SESSION_TYPE_LABELS: Record<(typeof SESSION_TYPES)[number], string> = {
+  lecture: "Lecture",
+  lab: "Lab",
+  tutorial: "Tutorial",
+  seminar: "Seminar",
+  exam: "Exam",
+  other: "Lesson",
+}
+
+export function sessionTypeLabel(type: string | null | undefined): string {
+  return SESSION_TYPE_LABELS[type as keyof typeof SESSION_TYPE_LABELS] ?? "Lesson"
+}
+
 export const DAYS_OF_WEEK = [
   { value: 0, label: "Sunday" },
   { value: 1, label: "Monday" },

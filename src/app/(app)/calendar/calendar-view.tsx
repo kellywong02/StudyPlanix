@@ -118,6 +118,7 @@ export function CalendarView({
           courseId={selectedEvent.resource.courseId}
           sessionId={selectedEvent.resource.sessionId}
           lessonNumber={selectedEvent.resource.lessonNumber ?? undefined}
+          sessionType={selectedEvent.resource.sessionType}
         />
       )}
 

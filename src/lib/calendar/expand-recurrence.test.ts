@@ -155,6 +155,51 @@ describe("expandClassSessions", () => {
     expect(lessonNumberOf("d3")).toBe(null)
   })
 
+  it("numbers dated sessions per session type, so labs and lectures count independently", () => {
+    const lecture1: ClassSessionLike = {
+      ...baseSession,
+      id: "lec1",
+      sessionType: "lecture",
+      isRecurring: false,
+      dayOfWeek: null,
+      recurrenceStartDate: null,
+      recurrenceEndDate: null,
+      specificDates: ["2026-10-05"],
+    }
+    const lab1: ClassSessionLike = {
+      ...lecture1,
+      id: "lab1",
+      sessionType: "lab",
+      specificDates: ["2026-10-06"],
+    }
+    const lecture2: ClassSessionLike = {
+      ...lecture1,
+      id: "lec2",
+      specificDates: ["2026-10-12"],
+    }
+    const lab2: ClassSessionLike = {
+      ...lab1,
+      id: "lab2",
+      specificDates: ["2026-10-13"],
+    }
+
+    const events = expandClassSessions(
+      [lecture1, lab1, lecture2, lab2],
+      new Date(2026, 9, 1),
+      new Date(2026, 9, 31)
+    )
+
+    const byId = new Map(events.map((e) => [e.resource.type === "class" ? e.resource.sessionId : "", e]))
+    const lessonNumberOf = (id: string) => {
+      const resource = byId.get(id)?.resource
+      return resource?.type === "class" ? resource.lessonNumber : undefined
+    }
+    expect(lessonNumberOf("lec1")).toBe(1)
+    expect(lessonNumberOf("lec2")).toBe(2)
+    expect(lessonNumberOf("lab1")).toBe(1)
+    expect(lessonNumberOf("lab2")).toBe(2)
+  })
+
   it("excludes a one-off session whose specific_date falls outside the visible range", () => {
     const exam: ClassSessionLike = {
       ...baseSession,

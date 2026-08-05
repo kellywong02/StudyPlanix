@@ -84,19 +84,22 @@ function applyTime(day: Date, time: string): Date {
 }
 
 // each course's dated (non-recurring), non-exam sessions get numbered in
-// chronological order — the same "Lesson N" numbering shown on the
-// timetable and dashboard pages, kept in sync here so the calendar matches.
+// chronological order per session type (so "Lab 1, Lab 2..." and
+// "Lecture 1, Lecture 2..." count independently) — the same numbering shown
+// on the timetable and dashboard pages, kept in sync here so the calendar
+// matches.
 function computeDatedLessonNumbers(sessions: ClassSessionLike[]): Map<string, number> {
-  const byCourse = new Map<string, ClassSessionLike[]>()
+  const byCourseAndType = new Map<string, ClassSessionLike[]>()
   for (const s of sessions) {
     if (s.isRecurring || s.sessionType === "exam") continue
-    const list = byCourse.get(s.courseId) ?? []
+    const key = `${s.courseId}::${s.sessionType}`
+    const list = byCourseAndType.get(key) ?? []
     list.push(s)
-    byCourse.set(s.courseId, list)
+    byCourseAndType.set(key, list)
   }
 
   const lessonNumbers = new Map<string, number>()
-  for (const list of byCourse.values()) {
+  for (const list of byCourseAndType.values()) {
     const sorted = [...list].sort((a, b) =>
       (a.specificDates?.[0] ?? "").localeCompare(b.specificDates?.[0] ?? "")
     )

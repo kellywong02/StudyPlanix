@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 
+import { sessionTypeLabel } from "@/lib/validators/class-sessions"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
@@ -20,6 +21,7 @@ export function SessionInfoDialog({
   notes,
   previousLessonNotes,
   lessonNumber,
+  sessionType,
   courseId,
   sessionId,
 }: {
@@ -36,6 +38,7 @@ export function SessionInfoDialog({
   notes?: string | null
   previousLessonNotes?: string | null
   lessonNumber?: number
+  sessionType?: string | null
   courseId: string
   sessionId: string
 }) {
@@ -56,7 +59,7 @@ export function SessionInfoDialog({
             {title}
             {lessonNumber && (
               <span className="ml-1.5 font-normal text-muted-foreground">
-                · Lesson {lessonNumber}
+                · {sessionTypeLabel(sessionType)} {lessonNumber}
               </span>
             )}
           </DialogTitle>

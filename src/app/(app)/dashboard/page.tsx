@@ -12,6 +12,7 @@ import {
 import { createClient } from "@/lib/supabase/server"
 import { isOverdue } from "@/lib/assignment-status"
 import { computeStudyStreak, type FocusSession } from "@/lib/study-analytics"
+import { sessionTypeLabel } from "@/lib/validators/class-sessions"
 import { ComingSoonCard } from "@/components/coming-soon"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -152,17 +153,20 @@ export default async function DashboardPage() {
     .sort((a, b) => a.nextDate.localeCompare(b.nextDate))
 
   // notes written on a class carry forward to the next occurrence of that
-  // course (same logic as the Timetable page), so a reminder written last
-  // lesson shows up here on the dashboard too. Each class's position in
-  // that same chronological order is its lesson number.
+  // course and session type (same logic as the Timetable page), so a
+  // reminder written last lesson shows up here on the dashboard too. Each
+  // class's position in that same chronological order (per type — "Lab 1,
+  // Lab 2..." and "Lecture 1, Lecture 2..." count independently) is its
+  // lesson number.
   const previousLessonNotes = new Map<string, string>()
   const lessonNumbers = new Map<string, number>()
   const datedClassesByCourse = new Map<string, NonNullable<typeof allSessions>>()
   for (const s of allSessions ?? []) {
     if (s.is_recurring || s.session_type === "exam") continue
-    const list = datedClassesByCourse.get(s.course_id) ?? []
+    const key = `${s.course_id}::${s.session_type}`
+    const list = datedClassesByCourse.get(key) ?? []
     list.push(s)
-    datedClassesByCourse.set(s.course_id, list)
+    datedClassesByCourse.set(key, list)
   }
   for (const list of datedClassesByCourse.values()) {
     const sorted = [...list].sort((a, b) =>
@@ -287,6 +291,7 @@ export default async function DashboardPage() {
                   notes={s.notes}
                   previousLessonNotes={previousLessonNotes.get(s.id)}
                   lessonNumber={lessonNumbers.get(s.id)}
+                  sessionType={s.session_type}
                   courseId={s.course_id}
                   sessionId={s.id}
                   trigger={
@@ -299,7 +304,7 @@ export default async function DashboardPage() {
                           {s.title || s.courses?.name}
                           {lessonNumbers.get(s.id) && (
                             <span className="ml-1.5 font-normal text-muted-foreground">
-                              · Lesson {lessonNumbers.get(s.id)}
+                              · {sessionTypeLabel(s.session_type)} {lessonNumbers.get(s.id)}
                             </span>
                           )}
                         </p>
@@ -343,6 +348,7 @@ export default async function DashboardPage() {
                   notes={s.notes}
                   previousLessonNotes={previousLessonNotes.get(s.id)}
                   lessonNumber={lessonNumbers.get(s.id)}
+                  sessionType={s.session_type}
                   courseId={s.course_id}
                   sessionId={s.id}
                   trigger={
@@ -355,7 +361,7 @@ export default async function DashboardPage() {
                           {s.title || s.courses?.name}
                           {lessonNumbers.get(s.id) && (
                             <span className="ml-1.5 font-normal text-muted-foreground">
-                              · Lesson {lessonNumbers.get(s.id)}
+                              · {sessionTypeLabel(s.session_type)} {lessonNumbers.get(s.id)}
                             </span>
                           )}
                         </p>

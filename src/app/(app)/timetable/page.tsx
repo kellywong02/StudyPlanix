@@ -68,16 +68,19 @@ export default async function TimetablePage({
   const exams = dated.filter((s) => s.session_type === "exam")
 
   // notes written on a class carry forward to the next occurrence of that
-  // course, so a reminder like "bring lab report" shows up on the upcoming
-  // lesson instead of getting buried on the class it was written on. Each
-  // class's position in that same chronological order is its lesson number.
+  // course and session type, so a reminder like "bring lab report" shows up
+  // on the upcoming lab instead of getting buried on the class it was
+  // written on. Each class's position in that same chronological order
+  // (per type — "Lab 1, Lab 2..." and "Lecture 1, Lecture 2..." count
+  // independently) is its lesson number.
   const previousLessonNotes = new Map<string, string>()
   const lessonNumbers = new Map<string, number>()
   const classesByCourse = new Map<string, typeof datedClasses>()
   for (const s of datedClasses) {
-    const list = classesByCourse.get(s.course_id) ?? []
+    const key = `${s.course_id}::${s.session_type}`
+    const list = classesByCourse.get(key) ?? []
     list.push(s)
-    classesByCourse.set(s.course_id, list)
+    classesByCourse.set(key, list)
   }
   for (const list of classesByCourse.values()) {
     const sorted = [...list].sort((a, b) =>

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState, useTransition } from "react"
 
 import { deleteClassSessions } from "@/lib/actions/class-sessions"
+import { sessionTypeLabel } from "@/lib/validators/class-sessions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { Database } from "@/types/database.types"
@@ -164,7 +165,7 @@ function SessionCard({
             {s.title || s.courses?.name}
             {lessonNumber && (
               <span className="ml-1.5 font-normal text-muted-foreground">
-                · Lesson {lessonNumber}
+                · {sessionTypeLabel(s.session_type)} {lessonNumber}
               </span>
             )}
           </span>
